@@ -256,6 +256,48 @@
   gap: 0.9rem;
 }
 
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+
+.menu-card {
+  display: block;
+  text-decoration: none;
+  background: #162253;
+  border: 1px solid #2f468e;
+  border-radius: 14px;
+  padding: 0.9rem;
+  color: #d7e3ff;
+}
+
+.menu-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.menu-card p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #afc1ec;
+}
+
+.page-head {
+  margin: 0.2rem 0 0.85rem;
+}
+
+.back-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: #dbe6ff;
+  background: #253a80;
+  border: 1px solid #3f5fc9;
+  border-radius: 10px;
+  padding: 0.42rem 0.65rem;
+  font-weight: 700;
+}
+
 .card {
   background: #131c47;
   border: 1px solid #263777;
@@ -388,53 +430,9 @@ th {
   color: #f0f5ff;
 }
 
-.bottom-nav {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(760px, calc(100% - 1rem));
-  bottom: 0;
-  z-index: 12;
-  background: rgba(16, 23, 48, 0.97);
-  border: 1px solid #2a3873;
-  border-bottom: none;
-  border-radius: 14px 14px 0 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 0.5rem 0.3rem calc(0.5rem + env(safe-area-inset-bottom));
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.nav-item {
-  border: none;
-  background: transparent;
-  color: #9daed6;
-  display: grid;
-  place-items: center;
-  gap: 0.2rem;
-  cursor: pointer;
-}
-
-.nav-item span {
-  font-size: 1.1rem;
-}
-
-.nav-item small {
-  font-size: 0.78rem;
-}
-
-.nav-item.active {
-  color: #627fff;
-}
-
-.nav-item.active span {
-  filter: drop-shadow(0 0 8px rgba(98, 127, 255, 0.6));
-}
-
 @media (max-width: 640px) {
   .container {
-    padding: 0.75rem 0.65rem 6.2rem;
+    padding: 0.75rem 0.65rem 1rem;
   }
 
   .hero-header h2 {

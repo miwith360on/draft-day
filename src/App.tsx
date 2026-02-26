@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { matchProspectToTeams, type TeamFitMatch } from './teamSchemeFit'
+import { Link, Route, Routes } from 'react-router-dom'
 
 type CombineDay = 'Day 1' | 'Day 2' | 'Day 3' | 'Day 4'
 
@@ -28,7 +29,6 @@ type ScoredPlayer = Player & {
   roundProjection: string
 }
 
-type ViewMode = 'pulse' | 'tracker' | 'war-room' | 'lab'
 type AnalyticsViewMode = 'acceleration' | 'explosiveness' | 'agility' | 'power' | 'throw' | 'percentile' | 'scheme-fit'
 
 type AnalyticsPlayer = Player & {
@@ -211,7 +211,6 @@ const App = () => {
   const [lastUpdate, setLastUpdate] = useState<string>('Waiting for first update...')
   const [dataSource, setDataSource] = useState<'simulation' | 'sportradar'>(useRealData ? 'sportradar' : 'simulation')
   const [useSimulationFallback, setUseSimulationFallback] = useState(!useRealData)
-  const [viewMode, setViewMode] = useState<ViewMode>('pulse')
   const refreshMs = 30000
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [bannerDismissed, setBannerDismissed] = useState(false)
@@ -502,6 +501,54 @@ const App = () => {
     return 'low'
   }
 
+  const currentDraftPulseCard = (
+    <section className="hero-card">
+      <div className="hero-header">
+        <h2>Current Draft Pulse</h2>
+        <p><span className="live-dot" /> Live</p>
+      </div>
+      <p className="hero-subtitle">Tracking incoming official metrics and projection movement in real time.</p>
+
+      <div className="pulse-ring" role="img" aria-label="Combine progress">
+        <div>
+          <strong>{combineProgress}%</strong>
+          <p>{pulseStatus}</p>
+        </div>
+      </div>
+
+      <div className="stats-grid">
+        <article className="stat-chip">
+          <span aria-hidden="true">⚡</span>
+          <div>
+            <small>FASTEST 40</small>
+            <strong>{topFortyTime ? `${topFortyTime.fortyYard?.toFixed(2)}s` : '--'}</strong>
+          </div>
+        </article>
+        <article className="stat-chip">
+          <span aria-hidden="true">🎯</span>
+          <div>
+            <small>TOP PROSPECT</small>
+            <strong>{topProjectedPick ? topProjectedPick.name : 'TBD'}</strong>
+          </div>
+        </article>
+        <article className="stat-chip">
+          <span aria-hidden="true">📊</span>
+          <div>
+            <small>PLAYERS TRACKED</small>
+            <strong>{players.length}</strong>
+          </div>
+        </article>
+        <article className="stat-chip">
+          <span aria-hidden="true">🛰️</span>
+          <div>
+            <small>DATA SOURCE</small>
+            <strong>{dataSource === 'sportradar' ? 'Sportradar' : 'Fallback'}</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+
   return (
     <main className="container">
       <header className="app-topbar">
@@ -526,184 +573,142 @@ const App = () => {
         <button className="close-btn" type="button" onClick={() => setBannerDismissed(true)} aria-label="Dismiss alert">✕</button>
       </section>
       )}
+      <Routes>
+        <Route path="/" element={
+          <>
+            {currentDraftPulseCard}
+            <section className="menu-grid">
+              <Link className="menu-card" to="/tracker">
+                <h3>Live Tracker</h3>
+                <p>Watch real-time drill movement and 40-yard rankings.</p>
+              </Link>
+              <Link className="menu-card" to="/war-room">
+                <h3>War Room</h3>
+                <p>View board rankings, risers, and projection movement.</p>
+              </Link>
+              <Link className="menu-card" to="/analytics">
+                <h3>Advanced Analytics</h3>
+                <p>Dive into athletic metrics, percentiles, and scheme fit.</p>
+              </Link>
+            </section>
+          </>
+        } />
 
-      <section className="hero-card">
-        <div className="hero-header">
-          <h2>Current Draft Pulse</h2>
-          <p><span className="live-dot" /> Live</p>
-        </div>
-        <p className="hero-subtitle">Tracking incoming official metrics and projection movement in real time.</p>
-
-        <div className="pulse-ring" role="img" aria-label="Combine progress">
-          <div>
-            <strong>{combineProgress}%</strong>
-            <p>{pulseStatus}</p>
-          </div>
-        </div>
-
-        <div className="stats-grid">
-          <article className="stat-chip">
-            <span aria-hidden="true">⚡</span>
-            <div>
-              <small>FASTEST 40</small>
-              <strong>{topFortyTime ? `${topFortyTime.fortyYard?.toFixed(2)}s` : '--'}</strong>
+        <Route path="/tracker" element={
+          <>
+            <div className="page-head">
+              <Link to="/" className="back-btn">← Back to Dashboard</Link>
             </div>
-          </article>
-          <article className="stat-chip">
-            <span aria-hidden="true">🎯</span>
-            <div>
-              <small>TOP PROSPECT</small>
-              <strong>{topProjectedPick ? topProjectedPick.name : 'TBD'}</strong>
+            <section className="card live-update">
+              <h2>Live Update Feed</h2>
+              <p>{lastUpdate}</p>
+            </section>
+            <section className="grid">
+              <article className="card">
+                <h2>Live Drill Tracker: 40-Yard Leaderboard</h2>
+                <ol className="rank-list">
+                  {fortyLeaderboard.map((player) => (
+                    <li key={player.id}>
+                      <strong>{player.name}</strong> ({player.position}) - {player.fortyYard?.toFixed(2)}s
+                    </li>
+                  ))}
+                </ol>
+              </article>
+              <article className="card">
+                <h2>Fastest By Day</h2>
+                <ul>
+                  {fastestByDay.map(({ day, player }) => (
+                    <li key={day}>
+                      <strong>{day}:</strong>{' '}
+                      {player ? `${player.name} (${player.position}) - ${player.fortyYard?.toFixed(2)}s` : 'No times yet'}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            </section>
+          </>
+        } />
+
+        <Route path="/war-room" element={
+          <>
+            <div className="page-head">
+              <Link to="/" className="back-btn">← Back to Dashboard</Link>
             </div>
-          </article>
-          <article className="stat-chip">
-            <span aria-hidden="true">📊</span>
-            <div>
-              <small>PLAYERS TRACKED</small>
-              <strong>{players.length}</strong>
+            <section className="grid">
+              <article className="card">
+                <h2>War Room: Position Leaders</h2>
+                <ul className="rank-list">
+                  {positionLeaders.map(([position, player]) => (
+                    <li key={position}>
+                      <strong>{position}</strong>: {player.name} - Score {player.totalScore}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="card">
+                <h2>Draft Stock Watch</h2>
+                <ul className="rank-list">
+                  {stockWatch.map((player) => (
+                    <li key={player.id}>
+                      <strong>{player.name}</strong> ({player.position}) - {player.updates} recent jumps
+                    </li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="card">
+                <h2>Likely Highest Draft Picks</h2>
+                <ol>
+                  {draftProjection.map((player) => (
+                    <li key={player.id}>
+                      <strong>{player.name}</strong> ({player.position}, {player.college}) - Score {player.totalScore}
+                    </li>
+                  ))}
+                </ol>
+              </article>
+            </section>
+
+            <section className="card">
+              <h2>Current Combine Board</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      <th>Pos</th>
+                      <th>Day</th>
+                      <th>40Y</th>
+                      <th>Vertical</th>
+                      <th>Broad</th>
+                      <th>Projection</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map((player) => (
+                      <tr key={player.id}>
+                        <td>{player.name}</td>
+                        <td>{player.position}</td>
+                        <td>{player.day}</td>
+                        <td>{player.fortyYard !== null ? `${player.fortyYard.toFixed(2)}s` : '-'}</td>
+                        <td>{player.vertical !== null ? `${player.vertical} in` : '-'}</td>
+                        <td>{player.broadJump !== null ? `${player.broadJump} in` : '-'}</td>
+                        <td>{projectionByPlayerId.get(player.id) ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        } />
+
+        <Route path="/analytics" element={
+          <>
+            <div className="page-head">
+              <Link to="/" className="back-btn">← Back to Dashboard</Link>
             </div>
-          </article>
-          <article className="stat-chip">
-            <span aria-hidden="true">🛰️</span>
-            <div>
-              <small>DATA SOURCE</small>
-              <strong>{dataSource === 'sportradar' ? 'Sportradar' : 'Fallback'}</strong>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="card live-update">
-        <h2>Live Update Feed</h2>
-        <p>{lastUpdate}</p>
-      </section>
-
-      {viewMode === 'pulse' && (
-      <section className="grid">
-        <article className="card">
-          <h2>Fastest By Day</h2>
-          <ul>
-            {fastestByDay.map(({ day, player }) => (
-              <li key={day}>
-                <strong>{day}:</strong>{' '}
-                {player ? `${player.name} (${player.position}) - ${player.fortyYard?.toFixed(2)}s` : 'No times yet'}
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="card">
-          <h2>Likely Highest Draft Picks</h2>
-          <ol>
-            {draftProjection.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}, {player.college}) - Score {player.totalScore}
-              </li>
-            ))}
-          </ol>
-        </article>
-      </section>
-      )}
-
-      {viewMode === 'tracker' && (
-      <section className="grid">
-        <article className="card">
-          <h2>Live Drill Tracker: 40-Yard Leaderboard</h2>
-          <ol className="rank-list">
-            {fortyLeaderboard.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}) - {player.fortyYard?.toFixed(2)}s
-              </li>
-            ))}
-          </ol>
-        </article>
-        <article className="card">
-          <h2>Fastest By Day</h2>
-          <ul>
-            {fastestByDay.map(({ day, player }) => (
-              <li key={day}>
-                <strong>{day}:</strong>{' '}
-                {player ? `${player.name} (${player.position}) - ${player.fortyYard?.toFixed(2)}s` : 'No times yet'}
-              </li>
-            ))}
-          </ul>
-        </article>
-      </section>
-      )}
-
-      {viewMode === 'war-room' && (
-      <>
-      <section className="grid">
-        <article className="card">
-          <h2>War Room: Position Leaders</h2>
-          <ul className="rank-list">
-            {positionLeaders.map(([position, player]) => (
-              <li key={position}>
-                <strong>{position}</strong>: {player.name} - Score {player.totalScore}
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="card">
-          <h2>Draft Stock Watch</h2>
-          <ul className="rank-list">
-            {stockWatch.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}) - {player.updates} recent jumps
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="card">
-          <h2>Likely Highest Draft Picks</h2>
-          <ol>
-            {draftProjection.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}, {player.college}) - Score {player.totalScore}
-              </li>
-            ))}
-          </ol>
-        </article>
-      </section>
-
-      <section className="card">
-        <h2>Current Combine Board</h2>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Pos</th>
-                <th>Day</th>
-                <th>40Y</th>
-                <th>Vertical</th>
-                <th>Broad</th>
-                <th>Projection</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((player) => (
-                <tr key={player.id}>
-                  <td>{player.name}</td>
-                  <td>{player.position}</td>
-                  <td>{player.day}</td>
-                  <td>{player.fortyYard !== null ? `${player.fortyYard.toFixed(2)}s` : '-'}</td>
-                  <td>{player.vertical !== null ? `${player.vertical} in` : '-'}</td>
-                  <td>{player.broadJump !== null ? `${player.broadJump} in` : '-'}</td>
-                  <td>{projectionByPlayerId.get(player.id) ?? '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      </>
-      )}
-
-      {viewMode === 'lab' && (
-      <section className="card">
+            <section className="card">
         <h2>Advanced Combine Analytics</h2>
         <div className="analytics-subtabs" aria-label="Analytics pages">
           <button className={`analytics-tab ${analyticsViewMode === 'acceleration' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('acceleration')}>Acceleration</button>
@@ -894,14 +899,9 @@ const App = () => {
           )}
         </div>
       </section>
-      )}
-
-      <nav className="bottom-nav" aria-label="Primary">
-        <button className={`nav-item ${viewMode === 'pulse' ? 'active' : ''}`} type="button" onClick={() => setViewMode('pulse')}><span>🏠</span><small>Pulse</small></button>
-        <button className={`nav-item ${viewMode === 'tracker' ? 'active' : ''}`} type="button" onClick={() => setViewMode('tracker')}><span>⏱️</span><small>Tracker</small></button>
-        <button className={`nav-item ${viewMode === 'war-room' ? 'active' : ''}`} type="button" onClick={() => setViewMode('war-room')}><span>🧾</span><small>War Room</small></button>
-        <button className={`nav-item ${viewMode === 'lab' ? 'active' : ''}`} type="button" onClick={() => setViewMode('lab')}><span>🧠</span><small>Lab</small></button>
-      </nav>
+          </>
+        } />
+      </Routes>
     </main>
   )
 }
