@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { matchProspectToTeams, type TeamFitMatch } from './teamSchemeFit'
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, NavLink, Route, Routes } from 'react-router-dom'
 
 type CombineDay = 'Day 1' | 'Day 2' | 'Day 3' | 'Day 4'
 
@@ -577,20 +577,6 @@ const App = () => {
         <Route path="/" element={
           <>
             {currentDraftPulseCard}
-            <section className="menu-grid">
-              <Link className="menu-card" to="/tracker">
-                <h3>Live Tracker</h3>
-                <p>Watch real-time drill movement and 40-yard rankings.</p>
-              </Link>
-              <Link className="menu-card" to="/war-room">
-                <h3>War Room</h3>
-                <p>View board rankings, risers, and projection movement.</p>
-              </Link>
-              <Link className="menu-card" to="/analytics">
-                <h3>Advanced Analytics</h3>
-                <p>Dive into athletic metrics, percentiles, and scheme fit.</p>
-              </Link>
-            </section>
           </>
         } />
 
@@ -901,7 +887,27 @@ const App = () => {
       </section>
           </>
         } />
+        <Route path="*" element={currentDraftPulseCard} />
       </Routes>
+
+      <nav className="bottom-nav" aria-label="Primary">
+        <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <span>🏠</span>
+          <small>Pulse</small>
+        </NavLink>
+        <NavLink to="/tracker" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <span>⏱️</span>
+          <small>Tracker</small>
+        </NavLink>
+        <NavLink to="/war-room" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <span>🧾</span>
+          <small>War Room</small>
+        </NavLink>
+        <NavLink to="/analytics" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <span>🧠</span>
+          <small>Lab</small>
+        </NavLink>
+      </nav>
     </main>
   )
 }
