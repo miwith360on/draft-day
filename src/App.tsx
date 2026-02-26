@@ -29,6 +29,7 @@ type ScoredPlayer = Player & {
 }
 
 type ViewMode = 'overview' | 'speed' | 'board' | 'risers' | 'analytics' | 'settings'
+type AnalyticsViewMode = 'acceleration' | 'explosiveness' | 'agility' | 'power' | 'throw' | 'percentile' | 'scheme-fit'
 
 type AnalyticsPlayer = Player & {
   accelerationScore: number | null
@@ -215,6 +216,7 @@ const App = () => {
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark')
+  const [analyticsViewMode, setAnalyticsViewMode] = useState<AnalyticsViewMode>('acceleration')
 
   const runSimulationTick = useCallback(() => {
     setPlayers((prev) => {
@@ -715,49 +717,193 @@ const App = () => {
       {viewMode === 'analytics' && (
       <section className="card">
         <h2>Advanced Combine Analytics</h2>
+        <div className="analytics-subtabs" aria-label="Analytics pages">
+          <button className={`analytics-tab ${analyticsViewMode === 'acceleration' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('acceleration')}>Acceleration</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'explosiveness' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('explosiveness')}>Explosive</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'agility' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('agility')}>Agility</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'power' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('power')}>Power</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'throw' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('throw')}>Throw Velocity</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'percentile' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('percentile')}>Pos %ile</button>
+          <button className={`analytics-tab ${analyticsViewMode === 'scheme-fit' ? 'active' : ''}`} type="button" onClick={() => setAnalyticsViewMode('scheme-fit')}>Scheme Fit</button>
+        </div>
+
         <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Pos</th>
-                <th>Acceleration</th>
-                <th>Explosive</th>
-                <th>Agility</th>
-                <th>Power</th>
-                <th>Throw Vel</th>
-                <th>Pos %ile</th>
-                <th>Top Team Fits</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analyticsBoard.map((player) => (
-                <tr key={player.id} className={`analytics-row analytics-row--${getPercentileBand(player.positionAdjustedPercentile)}`}>
-                  <td>{player.name}</td>
-                  <td>{player.position}</td>
-                  <td>{formatMetric(player.accelerationScore, 3)}</td>
-                  <td>{formatMetric(player.explosivenessIndex, 1)}</td>
-                  <td>{formatMetric(player.agilityComposite, 2)}</td>
-                  <td>{formatMetric(player.powerRating, 1)}</td>
-                  <td>{formatMetric(player.throwVelocityScore, 0, ' mph')}</td>
-                  <td>
-                    <span className={`metric-pill metric-pill--${getPercentileBand(player.positionAdjustedPercentile)}`}>
-                      {formatMetric(player.positionAdjustedPercentile, 1, '%')}
-                    </span>
-                  </td>
-                  <td>
-                    <ul className="fit-list">
-                      {(teamFitsByPlayerId.get(player.id) ?? []).map((fit) => (
-                        <li key={`${player.id}-${fit.team}`}>
-                          <strong>{fit.team}</strong> — {fit.matchPercentage.toFixed(1)}% · {fit.reason}
-                        </li>
-                      ))}
-                    </ul>
-                  </td>
+          {analyticsViewMode === 'acceleration' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>10Y Split</th>
+                  <th>40 Time</th>
+                  <th>Acceleration Score</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.tenYardSplit, 2, 's')}</td>
+                    <td>{formatMetric(player.fortyYard, 2, 's')}</td>
+                    <td>{formatMetric(player.accelerationScore, 3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'explosiveness' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Vertical</th>
+                  <th>Broad Jump</th>
+                  <th>Explosiveness Index</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.vertical, 0, ' in')}</td>
+                    <td>{formatMetric(player.broadJump, 0, ' in')}</td>
+                    <td>{formatMetric(player.explosivenessIndex, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'agility' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Shuttle</th>
+                  <th>3-Cone</th>
+                  <th>Agility Composite</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.shuttle, 2, 's')}</td>
+                    <td>{formatMetric(player.threeCone, 2, 's')}</td>
+                    <td>{formatMetric(player.agilityComposite, 2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'power' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Bench Reps</th>
+                  <th>Weight</th>
+                  <th>Power Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.benchReps, 0)}</td>
+                    <td>{formatMetric(player.weightLbs, 0, ' lbs')}</td>
+                    <td>{formatMetric(player.powerRating, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'throw' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Throw Velocity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.throwVelocityScore, 0, ' mph')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'percentile' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Athletic Score</th>
+                  <th>Position-Adjusted Percentile</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id} className={`analytics-row analytics-row--${getPercentileBand(player.positionAdjustedPercentile)}`}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>{formatMetric(player.athleticScore, 1)}</td>
+                    <td>
+                      <span className={`metric-pill metric-pill--${getPercentileBand(player.positionAdjustedPercentile)}`}>
+                        {formatMetric(player.positionAdjustedPercentile, 1, '%')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {analyticsViewMode === 'scheme-fit' && (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Top 3 Team Fits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsBoard.map((player) => (
+                  <tr key={player.id}>
+                    <td>{player.name}</td>
+                    <td>{player.position}</td>
+                    <td>
+                      <ul className="fit-list">
+                        {(teamFitsByPlayerId.get(player.id) ?? []).map((fit) => (
+                          <li key={`${player.id}-${fit.team}`}>
+                            <strong>{fit.team}</strong> — {fit.matchPercentage.toFixed(1)}% · {fit.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
       )}

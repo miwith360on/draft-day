@@ -363,6 +363,31 @@ th {
   color: #d7e2ff;
 }
 
+.analytics-subtabs {
+  display: flex;
+  gap: 0.42rem;
+  overflow-x: auto;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.1rem;
+}
+
+.analytics-tab {
+  border: 1px solid #314582;
+  background: #1a2558;
+  color: #b9c8ed;
+  border-radius: 999px;
+  padding: 0.3rem 0.62rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.analytics-tab.active {
+  border-color: #4c69d5;
+  background: #2a3f88;
+  color: #f0f5ff;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;
