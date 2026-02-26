@@ -28,7 +28,7 @@ type ScoredPlayer = Player & {
   roundProjection: string
 }
 
-type ViewMode = 'overview' | 'speed' | 'board' | 'risers' | 'analytics' | 'settings'
+type ViewMode = 'pulse' | 'tracker' | 'war-room' | 'lab'
 type AnalyticsViewMode = 'acceleration' | 'explosiveness' | 'agility' | 'power' | 'throw' | 'percentile' | 'scheme-fit'
 
 type AnalyticsPlayer = Player & {
@@ -211,8 +211,8 @@ const App = () => {
   const [lastUpdate, setLastUpdate] = useState<string>('Waiting for first update...')
   const [dataSource, setDataSource] = useState<'simulation' | 'sportradar'>(useRealData ? 'sportradar' : 'simulation')
   const [useSimulationFallback, setUseSimulationFallback] = useState(!useRealData)
-  const [viewMode, setViewMode] = useState<ViewMode>('overview')
-  const [refreshMs, setRefreshMs] = useState(30000)
+  const [viewMode, setViewMode] = useState<ViewMode>('pulse')
+  const refreshMs = 30000
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark')
@@ -515,18 +515,9 @@ const App = () => {
         <div className="app-actions">
           <button className="icon-btn" type="button" onClick={() => void handleManualRefresh()} aria-label="Refresh data">⟳</button>
           <button className="icon-btn" type="button" onClick={toggleAlerts} aria-label="Toggle alerts">{alertsEnabled ? '🔔' : '🔕'}</button>
-          <button className="icon-btn" type="button" onClick={() => setViewMode('settings')} aria-label="Open settings">⚙</button>
+          <button className="icon-btn" type="button" onClick={toggleTheme} aria-label="Toggle theme">{themeMode === 'dark' ? '🌙' : '☀️'}</button>
         </div>
       </header>
-
-      <section className="chip-row" aria-label="Quick views">
-        <button className={`view-chip ${viewMode === 'overview' ? 'active' : ''}`} type="button" onClick={() => setViewMode('overview')}>Overview</button>
-        <button className={`view-chip ${viewMode === 'speed' ? 'active' : ''}`} type="button" onClick={() => setViewMode('speed')}>40Y Live</button>
-        <button className={`view-chip ${viewMode === 'board' ? 'active' : ''}`} type="button" onClick={() => setViewMode('board')}>Draft Board</button>
-        <button className={`view-chip ${viewMode === 'risers' ? 'active' : ''}`} type="button" onClick={() => setViewMode('risers')}>Risers</button>
-        <button className={`view-chip ${viewMode === 'analytics' ? 'active' : ''}`} type="button" onClick={() => setViewMode('analytics')}>Analytics</button>
-        <button className={`view-chip ${viewMode === 'settings' ? 'active' : ''}`} type="button" onClick={() => setViewMode('settings')}>Settings</button>
-      </section>
 
       {alertsEnabled && !bannerDismissed && (
       <section className="alert-strip">
@@ -587,7 +578,7 @@ const App = () => {
         <p>{lastUpdate}</p>
       </section>
 
-      {viewMode === 'overview' && (
+      {viewMode === 'pulse' && (
       <section className="grid">
         <article className="card">
           <h2>Fastest By Day</h2>
@@ -614,10 +605,10 @@ const App = () => {
       </section>
       )}
 
-      {viewMode === 'speed' && (
+      {viewMode === 'tracker' && (
       <section className="grid">
         <article className="card">
-          <h2>40-Yard Dash Leaderboard</h2>
+          <h2>Live Drill Tracker: 40-Yard Leaderboard</h2>
           <ol className="rank-list">
             {fortyLeaderboard.map((player) => (
               <li key={player.id}>
@@ -640,11 +631,11 @@ const App = () => {
       </section>
       )}
 
-      {viewMode === 'board' && (
+      {viewMode === 'war-room' && (
       <>
       <section className="grid">
         <article className="card">
-          <h2>Position Leaders</h2>
+          <h2>War Room: Position Leaders</h2>
           <ul className="rank-list">
             {positionLeaders.map(([position, player]) => (
               <li key={position}>
@@ -652,6 +643,28 @@ const App = () => {
               </li>
             ))}
           </ul>
+        </article>
+
+        <article className="card">
+          <h2>Draft Stock Watch</h2>
+          <ul className="rank-list">
+            {stockWatch.map((player) => (
+              <li key={player.id}>
+                <strong>{player.name}</strong> ({player.position}) - {player.updates} recent jumps
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="card">
+          <h2>Likely Highest Draft Picks</h2>
+          <ol>
+            {draftProjection.map((player) => (
+              <li key={player.id}>
+                <strong>{player.name}</strong> ({player.position}, {player.college}) - Score {player.totalScore}
+              </li>
+            ))}
+          </ol>
         </article>
       </section>
 
@@ -689,32 +702,7 @@ const App = () => {
       </>
       )}
 
-      {viewMode === 'risers' && (
-      <section className="grid">
-        <article className="card">
-          <h2>Draft Stock Watch</h2>
-          <ul className="rank-list">
-            {stockWatch.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}) - {player.updates} recent jumps
-              </li>
-            ))}
-          </ul>
-        </article>
-        <article className="card">
-          <h2>Likely Highest Draft Picks</h2>
-          <ol>
-            {draftProjection.map((player) => (
-              <li key={player.id}>
-                <strong>{player.name}</strong> ({player.position}, {player.college}) - Score {player.totalScore}
-              </li>
-            ))}
-          </ol>
-        </article>
-      </section>
-      )}
-
-      {viewMode === 'analytics' && (
+      {viewMode === 'lab' && (
       <section className="card">
         <h2>Advanced Combine Analytics</h2>
         <div className="analytics-subtabs" aria-label="Analytics pages">
@@ -908,40 +896,11 @@ const App = () => {
       </section>
       )}
 
-      {viewMode === 'settings' && (
-      <section className="card settings-card">
-        <h2>Settings</h2>
-        <div className="setting-row">
-          <label htmlFor="refresh-select">Refresh interval</label>
-          <select id="refresh-select" value={refreshMs} onChange={(event) => setRefreshMs(Number(event.target.value))}>
-            <option value={15000}>15 seconds</option>
-            <option value={30000}>30 seconds</option>
-            <option value={60000}>60 seconds</option>
-          </select>
-        </div>
-        <div className="setting-row">
-          <span>Alerts</span>
-          <button type="button" onClick={toggleAlerts}>{alertsEnabled ? 'On' : 'Off'}</button>
-        </div>
-        <div className="setting-row">
-          <span>Theme</span>
-          <button type="button" onClick={toggleTheme}>{themeMode === 'dark' ? 'Dark' : 'Light'}</button>
-        </div>
-        <div className="setting-row">
-          <span>Data source</span>
-          <strong>{dataSource === 'sportradar' ? 'Sportradar API' : 'Simulation fallback'}</strong>
-        </div>
-        <button className="refresh-btn" type="button" onClick={() => void handleManualRefresh()}>Refresh now</button>
-      </section>
-      )}
-
       <nav className="bottom-nav" aria-label="Primary">
-        <button className={`nav-item ${viewMode === 'overview' ? 'active' : ''}`} type="button" onClick={() => setViewMode('overview')}><span>🏠</span><small>Home</small></button>
-        <button className={`nav-item ${viewMode === 'board' ? 'active' : ''}`} type="button" onClick={() => setViewMode('board')}><span>🧾</span><small>Board</small></button>
-        <button className={`nav-item ${viewMode === 'speed' ? 'active' : ''}`} type="button" onClick={() => setViewMode('speed')}><span>⚡</span><small>Speed</small></button>
-        <button className={`nav-item ${viewMode === 'risers' ? 'active' : ''}`} type="button" onClick={() => setViewMode('risers')}><span>📈</span><small>Risers</small></button>
-        <button className={`nav-item ${viewMode === 'analytics' ? 'active' : ''}`} type="button" onClick={() => setViewMode('analytics')}><span>🧠</span><small>Metrics</small></button>
-        <button className={`nav-item ${viewMode === 'settings' ? 'active' : ''}`} type="button" onClick={() => setViewMode('settings')}><span>⚙</span><small>Prefs</small></button>
+        <button className={`nav-item ${viewMode === 'pulse' ? 'active' : ''}`} type="button" onClick={() => setViewMode('pulse')}><span>🏠</span><small>Pulse</small></button>
+        <button className={`nav-item ${viewMode === 'tracker' ? 'active' : ''}`} type="button" onClick={() => setViewMode('tracker')}><span>⏱️</span><small>Tracker</small></button>
+        <button className={`nav-item ${viewMode === 'war-room' ? 'active' : ''}`} type="button" onClick={() => setViewMode('war-room')}><span>🧾</span><small>War Room</small></button>
+        <button className={`nav-item ${viewMode === 'lab' ? 'active' : ''}`} type="button" onClick={() => setViewMode('lab')}><span>🧠</span><small>Lab</small></button>
       </nav>
     </main>
   )
