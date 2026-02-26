@@ -19,6 +19,10 @@ const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
   : null
 
+let lastGoodNormalizedPayload = null
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 app.use(
   cors(
     allowedOrigins
@@ -272,18 +276,39 @@ const fetchSportradarPayload = async () => {
     throw new Error('Missing SPORTRADAR_COMBINE_URL or SPORTRADAR_API_KEY')
   }
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  })
+  let lastError = null
 
-  if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`Sportradar request failed (${response.status}): ${body.slice(0, 240)}`)
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 20000)
+
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'draft-day-app/1.0',
+        },
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        const body = await response.text()
+        throw new Error(`Sportradar request failed (${response.status}): ${body.slice(0, 240)}`)
+      }
+
+      return response.json()
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown Sportradar request failure')
+
+      if (attempt < 3) {
+        await sleep(600 * attempt)
+      }
+    }
   }
 
-  return response.json()
+  throw lastError ?? new Error('Sportradar request failed after retries')
 }
 
 app.get('/api/health', (_req, res) => {
@@ -311,15 +336,35 @@ app.get('/api/combine/normalized', async (_req, res) => {
     const rawPlayers = findPlayerArray(payload)
     const players = rawPlayers.map(normalizePlayer)
 
-    res.json({
+    const normalizedPayload = {
       source: 'sportradar',
       fetchedAt: new Date().toISOString(),
       players,
       rawCount: rawPlayers.length,
-    })
+      stale: false,
+    }
+
+    lastGoodNormalizedPayload = normalizedPayload
+
+    res.json(normalizedPayload)
   } catch (error) {
-    res.status(500).json({
-      error: 'Failed to fetch normalized combine data',
+    if (lastGoodNormalizedPayload) {
+      res.json({
+        ...lastGoodNormalizedPayload,
+        stale: true,
+        warning: 'Using last successful combine snapshot due to temporary upstream issue',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      })
+      return
+    }
+
+    res.json({
+      source: 'fallback-empty',
+      fetchedAt: new Date().toISOString(),
+      players: [],
+      rawCount: 0,
+      stale: true,
+      warning: 'Combine feed temporarily unavailable; returning empty snapshot',
       message: error instanceof Error ? error.message : 'Unknown error',
     })
   }
