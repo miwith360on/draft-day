@@ -36,8 +36,9 @@ The app supports real API mode and simulation fallback. For production, keep API
 ## Railway Deploy (Single Service)
 
 - Deploy this repo as one Railway service.
-- Railway Build Command: `npm install && npm run build`
+- Railway Build Command: `npm install --include=dev && npm run build`
 - Railway Start Command: `npm start`
+- If Railway logs `npm warn config production Use --omit=dev instead`, this project is already configured to install dev dependencies during build (`npm install --include=dev`) so Vite/TypeScript can compile.
 - Set env vars in Railway:
   - `SPORTRADAR_API_KEY`
   - `SPORTRADAR_COMBINE_URL`
