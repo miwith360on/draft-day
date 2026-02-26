@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { matchProspectToTeams, type TeamFitMatch } from './teamSchemeFit'
 
 type CombineDay = 'Day 1' | 'Day 2' | 'Day 3' | 'Day 4'
 
@@ -18,6 +19,7 @@ type Player = {
   benchReps: number | null
   weightLbs: number | null
   throwVelocity: number | null
+  armLength: number | null
   updates: number
 }
 
@@ -46,14 +48,14 @@ type NormalizedApiResponse = {
 }
 
 const initialPlayers: Player[] = [
-  { id: 1, name: 'Trey Hollis', position: 'WR', college: 'Texas', day: 'Day 1', fortyYard: 4.41, tenYardSplit: 1.52, vertical: 38, broadJump: 127, shuttle: 4.19, threeCone: 6.91, benchReps: 14, weightLbs: 197, throwVelocity: null, updates: 1 },
-  { id: 2, name: 'Keenan Wallace', position: 'CB', college: 'Ohio State', day: 'Day 1', fortyYard: 4.35, tenYardSplit: 1.48, vertical: 40, broadJump: 132, shuttle: 4.08, threeCone: 6.82, benchReps: 15, weightLbs: 192, throwVelocity: null, updates: 1 },
-  { id: 3, name: 'Mason Boyd', position: 'RB', college: 'Georgia', day: 'Day 2', fortyYard: 4.49, tenYardSplit: 1.55, vertical: 36, broadJump: 123, shuttle: 4.24, threeCone: 7.06, benchReps: 19, weightLbs: 214, throwVelocity: null, updates: 1 },
-  { id: 4, name: 'Jalen Porter', position: 'WR', college: 'USC', day: 'Day 2', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 201, throwVelocity: null, updates: 0 },
-  { id: 5, name: 'Noah Banks', position: 'EDGE', college: 'Alabama', day: 'Day 3', fortyYard: 4.61, tenYardSplit: 1.64, vertical: 35, broadJump: 121, shuttle: 4.36, threeCone: 7.21, benchReps: 24, weightLbs: 262, throwVelocity: null, updates: 1 },
-  { id: 6, name: 'Tyler Green', position: 'LB', college: 'Michigan', day: 'Day 3', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 236, throwVelocity: null, updates: 0 },
-  { id: 7, name: 'Dylan Reed', position: 'QB', college: 'Oregon', day: 'Day 4', fortyYard: 4.73, tenYardSplit: 1.69, vertical: 33, broadJump: 118, shuttle: 4.42, threeCone: 7.32, benchReps: 12, weightLbs: 221, throwVelocity: 58, updates: 1 },
-  { id: 8, name: 'Roman Hayes', position: 'TE', college: 'Notre Dame', day: 'Day 4', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 245, throwVelocity: null, updates: 0 },
+  { id: 1, name: 'Trey Hollis', position: 'WR', college: 'Texas', day: 'Day 1', fortyYard: 4.41, tenYardSplit: 1.52, vertical: 38, broadJump: 127, shuttle: 4.19, threeCone: 6.91, benchReps: 14, weightLbs: 197, throwVelocity: null, armLength: 31.2, updates: 1 },
+  { id: 2, name: 'Keenan Wallace', position: 'CB', college: 'Ohio State', day: 'Day 1', fortyYard: 4.35, tenYardSplit: 1.48, vertical: 40, broadJump: 132, shuttle: 4.08, threeCone: 6.82, benchReps: 15, weightLbs: 192, throwVelocity: null, armLength: 32.4, updates: 1 },
+  { id: 3, name: 'Mason Boyd', position: 'RB', college: 'Georgia', day: 'Day 2', fortyYard: 4.49, tenYardSplit: 1.55, vertical: 36, broadJump: 123, shuttle: 4.24, threeCone: 7.06, benchReps: 19, weightLbs: 214, throwVelocity: null, armLength: 30.8, updates: 1 },
+  { id: 4, name: 'Jalen Porter', position: 'WR', college: 'USC', day: 'Day 2', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 201, throwVelocity: null, armLength: 31.6, updates: 0 },
+  { id: 5, name: 'Noah Banks', position: 'EDGE', college: 'Alabama', day: 'Day 3', fortyYard: 4.61, tenYardSplit: 1.64, vertical: 35, broadJump: 121, shuttle: 4.36, threeCone: 7.21, benchReps: 24, weightLbs: 262, throwVelocity: null, armLength: 33.1, updates: 1 },
+  { id: 6, name: 'Tyler Green', position: 'LB', college: 'Michigan', day: 'Day 3', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 236, throwVelocity: null, armLength: 32.0, updates: 0 },
+  { id: 7, name: 'Dylan Reed', position: 'QB', college: 'Oregon', day: 'Day 4', fortyYard: 4.73, tenYardSplit: 1.69, vertical: 33, broadJump: 118, shuttle: 4.42, threeCone: 7.32, benchReps: 12, weightLbs: 221, throwVelocity: 58, armLength: 31.0, updates: 1 },
+  { id: 8, name: 'Roman Hayes', position: 'TE', college: 'Notre Dame', day: 'Day 4', fortyYard: null, tenYardSplit: null, vertical: null, broadJump: null, shuttle: null, threeCone: null, benchReps: null, weightLbs: 245, throwVelocity: null, armLength: 33.2, updates: 0 },
 ]
 
 const randomInRange = (min: number, max: number, precision = 2) => {
@@ -71,6 +73,7 @@ const updatePlayerResult = (player: Player): Player => {
   const nextBench = player.benchReps ?? randomInRange(10, 30, 0)
   const nextWeight = player.weightLbs ?? randomInRange(190, 320, 0)
   const nextThrowVelocity = player.throwVelocity ?? (player.position === 'QB' ? randomInRange(51, 63, 0) : null)
+  const nextArmLength = player.armLength ?? randomInRange(30, 34.5, 1)
 
   const improvedForty = Math.max(4.25, Number((nextForty - randomInRange(0, 0.03)).toFixed(2)))
   const improvedTenSplit = Math.max(1.4, Number((nextTenSplit - randomInRange(0, 0.02)).toFixed(2)))
@@ -81,6 +84,7 @@ const updatePlayerResult = (player: Player): Player => {
   const improvedBench = Math.min(40, Math.round(nextBench + randomInRange(0, 1, 0)))
   const improvedWeight = Math.round(nextWeight)
   const improvedThrowVelocity = nextThrowVelocity !== null ? Math.min(70, Math.round(nextThrowVelocity + randomInRange(0, 1, 0))) : null
+  const improvedArmLength = Number(nextArmLength.toFixed(1))
 
   return {
     ...player,
@@ -93,6 +97,7 @@ const updatePlayerResult = (player: Player): Player => {
     benchReps: improvedBench,
     weightLbs: improvedWeight,
     throwVelocity: improvedThrowVelocity,
+    armLength: improvedArmLength,
     updates: player.updates + 1,
   }
 }
@@ -187,7 +192,8 @@ const mergeIncomingPlayers = (currentPlayers: Player[], incomingPlayers: Player[
       existing.threeCone !== incomingPlayer.threeCone ||
       existing.benchReps !== incomingPlayer.benchReps ||
       existing.weightLbs !== incomingPlayer.weightLbs ||
-      existing.throwVelocity !== incomingPlayer.throwVelocity
+      existing.throwVelocity !== incomingPlayer.throwVelocity ||
+      existing.armLength !== incomingPlayer.armLength
 
     return {
       ...existing,
@@ -435,6 +441,27 @@ const App = () => {
         positionAdjustedPercentile: percentileMap.get(player.id) ?? null,
       }))
       .sort((a, b) => (b.positionAdjustedPercentile ?? 0) - (a.positionAdjustedPercentile ?? 0))
+  }, [players])
+
+  const teamFitsByPlayerId = useMemo(() => {
+    const fitMap = new Map<string | number, TeamFitMatch[]>()
+
+    for (const player of players) {
+      fitMap.set(
+        player.id,
+        matchProspectToTeams({
+          id: player.id,
+          name: player.name,
+          position: player.position,
+          weight: player.weightLbs,
+          forty_time: player.fortyYard,
+          ten_yard_split: player.tenYardSplit,
+          arm_length: player.armLength,
+        }),
+      )
+    }
+
+    return fitMap
   }, [players])
 
   const projectionByPlayerId = useMemo(() => {
@@ -700,6 +727,7 @@ const App = () => {
                 <th>Power</th>
                 <th>Throw Vel</th>
                 <th>Pos %ile</th>
+                <th>Top Team Fits</th>
               </tr>
             </thead>
             <tbody>
@@ -716,6 +744,15 @@ const App = () => {
                     <span className={`metric-pill metric-pill--${getPercentileBand(player.positionAdjustedPercentile)}`}>
                       {formatMetric(player.positionAdjustedPercentile, 1, '%')}
                     </span>
+                  </td>
+                  <td>
+                    <ul className="fit-list">
+                      {(teamFitsByPlayerId.get(player.id) ?? []).map((fit) => (
+                        <li key={`${player.id}-${fit.team}`}>
+                          <strong>{fit.team}</strong> — {fit.matchPercentage.toFixed(1)}% · {fit.reason}
+                        </li>
+                      ))}
+                    </ul>
                   </td>
                 </tr>
               ))}

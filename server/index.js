@@ -195,6 +195,17 @@ const normalizePlayer = (rawPlayer, index) => {
     ]),
   )
 
+  const armLength = toNumber(
+    pickFirst(rawPlayer, [
+      'arm_length',
+      'arm',
+      'arms',
+      'measurements.arm_length',
+      'combine.arm_length',
+      'metrics.arm_length',
+    ]),
+  )
+
   return {
     id: pickFirst(rawPlayer, ['id', 'player_id', 'prospect_id', 'sr_id']) ?? `prospect-${index + 1}`,
     name,
@@ -210,6 +221,7 @@ const normalizePlayer = (rawPlayer, index) => {
     benchReps,
     weightLbs,
     throwVelocity,
+    armLength,
     updates: 1,
   }
 }

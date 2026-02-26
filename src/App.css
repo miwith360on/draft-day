@@ -351,6 +351,18 @@ th {
   color: #d2d8e5;
 }
 
+.fit-list {
+  margin: 0;
+  padding-left: 0.9rem;
+}
+
+.fit-list li {
+  margin-bottom: 0.35rem;
+  max-width: 360px;
+  font-size: 0.78rem;
+  color: #d7e2ff;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;
