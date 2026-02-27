@@ -273,11 +273,24 @@ const buildSportradarUrl = () => {
   const baseUrl = process.env.SPORTRADAR_COMBINE_URL
   const apiKey = process.env.SPORTRADAR_API_KEY
 
-  if (!baseUrl || !apiKey) {
+  if (!apiKey) {
     return null
   }
 
-  const url = new URL(baseUrl)
+  if (baseUrl) {
+    const url = new URL(baseUrl)
+    url.searchParams.set('api_key', apiKey)
+    return url.toString()
+  }
+
+  const accessLevel = process.env.SPORTRADAR_ACCESS_LEVEL ?? 'trial'
+  const languageCode = process.env.SPORTRADAR_LANGUAGE_CODE ?? 'en'
+  const draftYear = process.env.SPORTRADAR_DRAFT_YEAR ?? String(new Date().getUTCFullYear())
+  const format = process.env.SPORTRADAR_FORMAT ?? 'json'
+
+  const derivedUrl = `https://api.sportradar.com/draft/nfl/${accessLevel}/v1/${languageCode}/${draftYear}/prospects.${format}`
+
+  const url = new URL(derivedUrl)
   url.searchParams.set('api_key', apiKey)
   return url.toString()
 }
@@ -326,7 +339,7 @@ const fetchSportradarPayload = async () => {
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    sportradarConfigured: Boolean(process.env.SPORTRADAR_API_KEY && process.env.SPORTRADAR_COMBINE_URL),
+    sportradarConfigured: Boolean(process.env.SPORTRADAR_API_KEY),
   })
 })
 
